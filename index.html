@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>ユーザ管理システム</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue-js-modal@1.3.31/dist/index.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vuelidate@0.7.4/dist/validators.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vuelidate@0.7.4/dist/vuelidate.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vee-validate@3.2.3/dist/vee-validate.js"></script> 
+        <script src="https://cdn.jsdelivr.net/npm/vee-validate@3.2.3/dist/rules.umd.min.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            <div class="container-fluid mt-5">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1>{{ title }}</h1>
+                        <button class="btn btn-primary my-2" @click="showModal">ユーザ登録</button>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>名前</th>
+                                    <th>フリガナ</th>
+                                    <th>生年月日</th>
+                                    <th>電話番号</th>
+                                    <th>郵便番号</th>
+                                    <th>住所</th>
+                                    <th>性別</th>
+                                    <th>更新</th>
+                                    <th>削除</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="user in users" v-bind:key="user.id">
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.subName }}</td>
+                                    <td>{{ user.birth.replace(/-/g,'/') }}</td>
+                                    <td>{{ user.phone.slice(0,3) + '-' + user.phone.slice(3,7) + '-' + user.phone.slice(7) }}</td>
+                                    <td>{{ '〒' + user.subAdress.slice(0,3) + '-' + user.subAdress.slice(3) }}</td>
+                                    <td>{{ user.adress }}</td>
+                                    <td>{{ user.gender }}</td>
+                                    <td><button class="btn btn-primary" @click="editUser(user)">更新</button></td>
+                                    <td><button class="btn btn-danger" @click="deleteUser(user)">削除</bytton></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <modal name="user-modal" :height="800">
+                <div class="card overflow-auto h-100">
+                    <div class="card-body">
+                        <div class="card-title">
+                            <h2 v-if="createFlag">ユーザ登録</h2>
+                            <h2 v-else>ユーザ更新</h2>
+                        </div>
+                        <div class="card-text">
+                            <validation-observer ref="obs" v-slot="ObserverProps">
+                                <div class="form-group">
+                                    <label for="id">ID</label>
+                                    <validation-provider name="ID" rules="required|numeric">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="text" class="form-control" id="id" placeholder="IDを入力してください" v-model="form.id">
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="name">名前</label>
+                                    <validation-provider name="名前" rules="required">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="text" class="form-control" id="name" placeholder="名前を入力してください" v-model="form.name">
+                                            <a class="text-secondary">※ 姓と名の間に半角スペースを入れてください</a>
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="subName">フリガナ</label>
+                                    <validation-provider name="フリガナ" rules="required">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="text" class="form-control" id="subName" placeholder="フリガナを入力してください" v-model="form.subName">
+                                            <a class="text-secondary">※ 姓と名の間に半角スペースを入れてください</a>
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="birth">生年月日</label>
+                                    <validation-provider name="生年月日" rules="required">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="date" class="form-control" id="birth" placeholder="生年月日を入力してください" v-model="form.birth">
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone">電話番号</label>
+                                    <validation-provider name="電話番号" rules="required|digits:11">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="text" class="form-control" id="phone" placeholder="電話番号を入力してください" v-model="form.phone">
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="subAdress">郵便番号</label>
+                                    <validation-provider name="郵便番号" rules="required|digits:7">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="text" class="form-control" id="subAdress" placeholder="郵便番号を入力してください" v-model="form.subAdress">
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="adress">住所</label>
+                                    <validation-provider name="住所" rules="required">
+                                        <div slot-scope="ProviderProps">
+                                            <input type="text" class="form-control" id="adress" placeholder="住所を入力してください" v-model="form.adress">
+                                            <p class="error text-danger">{{ ProviderProps.errors[0] }}</p>
+                                        </div>
+                                    </validation-provider>
+                                </div>
+                                <div class="form-group">
+                                    <label for="gender">性別</label><br>
+                                    <input type="radio" id="male" v-model="form.gender" value="男性">男性&nbsp;
+                                    <input type="radio" id="female" v-model="form.gender" value="女性">女性
+                                </div>
+                                <div class="float-right">
+                                    <button class="btn btn-primary" @click="registerUser" v-if="createFlag" :disabled="ObserverProps.invalid || !ObserverProps.validated">登録</button>
+                                    <button class="btn btn-primary" @click="updateUser" v-else :disabled="ObserverProps.invalid">更新</button>
+                                    <button class="btn btn-secondary" @click="close">キャンセル</button>
+                                </div>
+                            </validation-observer>
+                        </div>
+                    </div>
+                </div>
+            </modal>
+        </div>
+        
+        <script>
+            Vue.use(window["vue-js-modal"].default);
+            
+            const VeeValidate = window.VeeValidate;
+            // フィールド監視
+            const ValidationProvider = VeeValidate.ValidationProvider;
+            // フォーム監視
+            const ValidationObserver = VeeValidate.ValidationObserver;
+            // バリデーションルール
+            const VeeValidateRules = window.VeeValidateRules;
+            VeeValidate.extend('required', VeeValidateRules.required);
+            VeeValidate.extend('numeric', VeeValidateRules.numeric);
+            VeeValidate.extend('digits', VeeValidateRules.digits);
+
+            Vue.component('ValidationProvider', ValidationProvider);
+            Vue.component('ValidationObserver', ValidationObserver);
+
+            const ja = {
+                "code": "ja",
+                "messages": {
+                    "digits": "{_field_}は{length}桁の数字でなければなりません",
+                    "numeric": "{_field_}は数字のみ使用できます",
+                    "required": "{_field_}は必須項目です",
+                }
+            };
+ 
+            VeeValidate.localize('ja', ja);
+
+            const vue = new Vue({
+                el: '#app',
+                methods: {
+                    showModal(){
+                        this.$modal.show('user-modal');
+                    },
+                    registerUser(){
+                        const user = Object.assign({},this.form);
+                        this.users.push(user);
+                        this.$modal.hide('user-modal');
+                        this.resetForm();
+                    },
+                    editUser(user){
+                        this.createFlag = false,
+                        this.editIndex = this.users.indexOf(user);
+                        this.form = Object.assign({}, user);
+                        this.$modal.show('user-modal');
+                    },
+                    showModal(){
+                        this.createFlag = true;
+                        this.resetForm();
+                        this.$modal.show('user-modal');
+                    },
+                    updateUser(){
+                        Object.assign(this.users[this.editIndex], this.form);
+                        this.$modal.hide('user-modal');
+                    },
+                    deleteUser(user){
+                        const index = this.users.indexOf(user);
+                        this.users.splice(index, 1)
+                    },
+                    resetForm(){
+                        this.form.id = '';
+                        this.form.name = '';
+                        this.form.subName = '';
+                        this.form.birth = '';
+                        this.form.phone = '';
+                        this.form.subAdress = '';
+                        this.form.adress = '';
+                        this.form.gender = '';
+                    },
+                    close(){
+                        this.resetForm();
+                        this.$modal.hide('user-modal');
+                    }
+                },
+                data: {
+                    title: 'ユーザ一覧',
+                    form:{
+                        id: '',
+                        name: '',
+                        subName: '',
+                        birth: '',
+                        phone: '',
+                        subAdress: '',
+                        adress: '',
+                        gender: ''
+                    },
+                    users: [],
+                    editIndex: -1,
+                    createFlag: true
+                },
+                created(){
+                    this.users = [
+                        {
+                            id: 1,
+                            name: '上原 理生',
+                            subName: 'ウエハラ リオ',
+                            birth: '1993-06-04',
+                            phone: '09086254182',
+                            subAdress: '9012134',
+                            adress: '沖縄県浦添市港川2丁目25番1-1107号',
+                            gender: '男性'
+                        },
+                        {
+                            id: 2,
+                            name: '野中 美咲希',
+                            subName: 'ノナカ ミサキ',
+                            birth: '1995-12-12',
+                            phone: '09019720489',
+                            subAdress: '9012134',
+                            adress: '沖縄県浦添市港川2丁目25番1-1107号',
+                            gender: '女性'
+                        }
+                    ]
+                }
+            })
+        </script>
+    </body>
+</html>
